@@ -20,7 +20,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tforceaio/tf-unifiler-go/extension"
+	"github.com/tforceaio/tf-unifiler-go/xlib"
 )
 
 func TestParseSha256Error(t *testing.T) {
@@ -38,7 +38,7 @@ func TestParseSha256Error(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := ParseSha256(strings.NewReader(tt.content))
-			errs := extension.ErrString(err)
+			errs := xlib.ErrString(err)
 			if errs != tt.err {
 				t.Errorf("wrong error. Expected %q. Actual %q.", tt.err, errs)
 			}

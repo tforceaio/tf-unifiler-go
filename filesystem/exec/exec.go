@@ -19,7 +19,7 @@ package exec
 import (
 	"os/exec"
 
-	"github.com/tforceaio/tf-unifiler-go/extension"
+	"github.com/tforceaio/tf-unifiler-go/xlib"
 )
 
 type CommandArgs interface {
@@ -28,7 +28,7 @@ type CommandArgs interface {
 
 func Run(app string, arg CommandArgs) (string, error) {
 	args := append([]string{app}, arg.Compile()...)
-	logger.Debug().Array("cmd", extension.StringSlice(args)).Msg("Preparing to execute command")
+	logger.Debug().Array("cmd", xlib.StringSlice(args)).Msg("Preparing to execute command")
 	cmd := exec.Command(app, arg.Compile()...)
 	stdout, err := cmd.Output()
 

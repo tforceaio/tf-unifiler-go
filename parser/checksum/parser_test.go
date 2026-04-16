@@ -20,7 +20,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tforceaio/tf-unifiler-go/extension"
+	"github.com/tforceaio/tf-unifiler-go/xlib"
 )
 
 func TestParserItemCount(t *testing.T) {
@@ -115,7 +115,7 @@ func TestParserError(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			p := NewParser(strings.NewReader(tt.content))
 			_, err := p.Parse()
-			errs := extension.ErrString(err)
+			errs := xlib.ErrString(err)
 			if errs != tt.err {
 				t.Errorf("wrong error. Expected %q. Actual %q.", tt.err, errs)
 			}
