@@ -28,7 +28,7 @@ type scanner struct {
 	r *bufio.Reader
 }
 
-func NewScanner(r io.Reader) *scanner {
+func newScanner(r io.Reader) *scanner {
 	return &scanner{r: bufio.NewReader(r)}
 }
 
@@ -46,6 +46,8 @@ func (s *scanner) Scan() (tok token, lit string) {
 	switch ch {
 	case '*':
 		return ASTERISK, "*"
+	case ';':
+		return SEMICOLON, ";"
 	case '\r':
 		return CR, "\r"
 	case '\n':
@@ -105,6 +107,10 @@ func isAsterisk(ch rune) bool {
 	return ch == '*'
 }
 
+func isSemicolon(ch rune) bool {
+	return ch == ';'
+}
+
 func isEndline(ch rune) bool {
 	return ch == '\r' || ch == '\n'
 }
@@ -118,5 +124,5 @@ func isWhitespace(ch rune) bool {
 }
 
 func isWord(ch rune) bool {
-	return !isAsterisk(ch) && !isEndline(ch) && !isEndOfFile(ch) && !isWhitespace(ch)
+	return !isAsterisk(ch) && !isSemicolon(ch) && !isEndline(ch) && !isEndOfFile(ch) && !isWhitespace(ch)
 }

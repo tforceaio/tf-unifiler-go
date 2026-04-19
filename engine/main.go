@@ -23,9 +23,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/spf13/cobra"
 	"github.com/tforce-io/tf-golib/opx"
-	"github.com/tforceaio/tf-unifiler-go/filesystem"
-	"github.com/tforceaio/tf-unifiler-go/filesystem/exec"
+	"github.com/tforceaio/tf-unifiler-go/filesys"
+	"github.com/tforceaio/tf-unifiler-go/filesys/exec"
 )
 
 var majorVersion = 0
@@ -62,13 +63,13 @@ func version() string {
 func InitApp() *Controller {
 	cfg := NewController(true)
 
-	filesystem.SetLogger(cfg.ModuleLogger("filesystem"))
+	filesys.SetLogger(cfg.ModuleLogger("filesystem"))
 	exec.SetLogger(cfg.ModuleLogger("exec"))
 
 	pwd, _ := os.Getwd()
-	pwd, _ = filesystem.GetAbsPath(pwd)
+	pwd, _ = filesys.GetAbsPath(pwd)
 	exec, _ := os.Executable()
-	exec, _ = filesystem.GetAbsPath(exec)
+	exec, _ = filesys.GetAbsPath(exec)
 
 	cfg.Logger.Info().Msgf("TF UNIFILER v%s", version())
 	gitDate2, _ := time.Parse("20060102", gitDate)
@@ -82,4 +83,32 @@ func InitApp() *Controller {
 	cfg.Logger.Info().Msg("-----------------")
 
 	return cfg
+}
+
+// Execute the program.
+func Execute() {
+	gitDate2, _ := time.Parse("20060102", gitDate)
+	buildDate := opx.Ternary(gitDate == "", time.Now().UTC(), gitDate2)
+
+	rootCmd := &cobra.Command{
+		Use: "unifiler",
+		Long: fmt.Sprintf(
+			`TF UNIFILER v%s.
+Copyright (C) %d T-Force I/O.
+Licensed under GPL-3.0 license. See COPYING file along with this program for more details.`,
+			version(),
+			buildDate.Year()),
+		Short:   "Cross platform file managements command line utility.",
+		Version: version(),
+	}
+	rootCmd.AddCommand(ChecksumCmd())
+	rootCmd.AddCommand(FileCmd())
+	rootCmd.AddCommand(MetadataCmd())
+	rootCmd.AddCommand(MirrorCmd())
+	rootCmd.AddCommand(VideoCmd())
+
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }

@@ -18,18 +18,14 @@ package engine
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"os"
 	"path"
-	"strconv"
-	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 	"github.com/tforce-io/tf-golib/opx"
-	"github.com/tforceaio/tf-unifiler-go/crypto/hasher"
-	"github.com/tforceaio/tf-unifiler-go/filesystem"
+	"github.com/tforceaio/tf-unifiler-go/filesys"
 )
 
 // Struct FileRenameMapping stores old and new filename after renaming for rollback.
@@ -53,37 +49,27 @@ func NewFileModule(c *Controller, cmdName string) *FileModule {
 // Compute hashes using common algorithms (MD5, SHA-1, SHA-256, SHA-512) for inputs (files/folders),
 // then print the result to console.
 func (m *FileModule) Hash(inputs []string) error {
-	if len(inputs) == 0 {
-		return errors.New("inputs is empty")
+	if err := validateInputs(inputs); err != nil {
+		return err
 	}
 	m.logger.Info().
 		Strs("files", inputs).
 		Msg("Start hashing files.")
 
-	contents, err := filesystem.List(inputs, true)
+	algos := []string{"md5", "sha1", "sha256", "sha512"}
+	fhResults, err := listAndHashFiles(inputs, algos, true)
 	if err != nil {
 		return err
 	}
 
-	algos := []string{"md5", "sha1", "sha256", "sha512"}
-	for _, c := range contents {
-		if c.IsDir {
-			continue
-		}
-		fhResults, err := hasher.Hash(c.RelativePath, algos)
-		if err != nil {
-			m.logger.Info().
-				Str("path", c.RelativePath).
-				Msg("Failed to compute hash.")
-			return err
-		}
+	for _, r := range fhResults {
 		m.logger.Info().
-			Str("md5", hex.EncodeToString(fhResults[0].Hash)).
-			Str("path", c.RelativePath).
-			Str("sha1", hex.EncodeToString(fhResults[1].Hash)).
-			Str("sha256", hex.EncodeToString(fhResults[2].Hash)).
-			Str("sha512", hex.EncodeToString(fhResults[3].Hash)).
-			Int("size", fhResults[0].Size).
+			Str("md5", hex.EncodeToString(r.Hashes[0].Hash)).
+			Str("path", r.Entry.RelativePath).
+			Str("sha1", hex.EncodeToString(r.Hashes[1].Hash)).
+			Str("sha256", hex.EncodeToString(r.Hashes[2].Hash)).
+			Str("sha512", hex.EncodeToString(r.Hashes[3].Hash)).
+			Int("size", r.Hashes[0].Size).
 			Msg("Hashed file.")
 	}
 
@@ -92,8 +78,8 @@ func (m *FileModule) Hash(inputs []string) error {
 
 // Multi-rename files. Input which is directories will be ignored.
 func (m *FileModule) Rename(inputs []string, preset string) error {
-	if len(inputs) == 0 {
-		return errors.New("inputs is empty")
+	if err := validateInputs(inputs); err != nil {
+		return err
 	}
 	m.logger.Info().
 		Strs("inputs", inputs).
@@ -121,70 +107,42 @@ func (m *FileModule) Rename(inputs []string, preset string) error {
 
 // Rename files using hashes of their contents.
 func (m *FileModule) renameByHash(inputs []string, algo string, prefix string) error {
-	if len(inputs) == 0 {
-		return errors.New("inputs is empty")
-	}
-
-	contents, err := filesystem.List(inputs, false)
+	fhResults, err := listAndHashFiles(inputs, []string{algo}, false)
 	if err != nil {
 		return err
 	}
 
-	files := []*filesystem.FsEntry{}
-	for _, c := range contents {
-		if !c.IsDir {
-			files = append(files, c)
-		}
-	}
-	hResults := []*hasher.HashResult{}
-	for _, c := range files {
-		if c.IsDir {
-			continue
-		}
-		fhResults, err := hasher.Hash(c.RelativePath, []string{algo})
-		if err != nil {
-			m.logger.Info().
-				Str("path", c.RelativePath).
-				Msg("Failed to compute hash.")
-			return err
-		}
+	for _, r := range fhResults {
 		m.logger.Info().
 			Str("algo", algo).
-			Str("path", c.RelativePath).
-			Int("size", fhResults[0].Size).
+			Str("path", r.Entry.RelativePath).
+			Int("size", r.Hashes[0].Size).
 			Msg("Hashed file.")
-		hResults = append(hResults, fhResults...)
 	}
 
 	mappings := []*FileRenameMapping{}
-	for _, e := range hResults {
-		parent := path.Dir(e.Path)
-		ext := path.Ext(e.Path)
-		targetName := prefix + hex.EncodeToString(e.Hash) + ext
-		target := opx.Ternary(parent == ".", targetName, filesystem.Join(parent, targetName))
+	for _, r := range fhResults {
+		parent := path.Dir(r.Entry.RelativePath)
+		ext := path.Ext(r.Entry.RelativePath)
+		targetName := prefix + hex.EncodeToString(r.Hashes[0].Hash) + ext
+		target := opx.Ternary(parent == ".", targetName, filesys.Join(parent, targetName))
 		mapping := &FileRenameMapping{
-			Source: e.Path,
+			Source: r.Entry.RelativePath,
 			Target: target,
 		}
 		mappings = append(mappings, mapping)
 	}
 
-	currentTimestamp := time.Now().UnixMilli()
-	rollbackFilePath := filesystem.Join(".", "unifiler-file-rename-"+strconv.FormatInt(currentTimestamp, 10)+".json")
-	fContent, _ := json.Marshal(mappings)
-	fContents := []string{string(fContent)}
-	err = filesystem.WriteLines(rollbackFilePath, fContents)
-	if err == nil {
-		m.logger.Info().
-			Int("lineCount", len(fContents)).
-			Str("path", rollbackFilePath).
-			Msg("Written rollback file.")
-	} else {
+	rollbackFilePath, err := writeJSON(".", "unifiler-file-rename-", mappings)
+	if err != nil {
 		m.logger.Info().
 			Str("path", rollbackFilePath).
 			Msg("Failed to write rollback file.")
 		return err
 	}
+	m.logger.Info().
+		Str("path", rollbackFilePath).
+		Msg("Written rollback file.")
 
 	for _, e := range mappings {
 		if e.Source == e.Target {
@@ -194,7 +152,7 @@ func (m *FileModule) renameByHash(inputs []string, algo string, prefix string) e
 				Msg("Skipped. File is already renamed.")
 			continue
 		}
-		if filesystem.IsFileExist(e.Target) {
+		if filesys.IsFileExist(e.Target) {
 			m.logger.Info().
 				Str("src", e.Source).
 				Str("dest", e.Target).
@@ -221,21 +179,20 @@ func (m *FileModule) renameByHash(inputs []string, algo string, prefix string) e
 
 // Decorator to log error occurred when calling handlers.
 func (m *FileModule) logError(err error) {
-	if err != nil {
-		m.logger.Err(err).Msg("Unexpected error has occurred. Program will exit.")
-	}
+	logProgramError(m.logger, err)
 }
 
 // Define Cobra Command for File module.
 func FileCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "file",
-		Short: "Batch file processing in general.",
+		Short: "Batch file processing.",
 	}
+	rootCmd.PersistentFlags().StringArrayP("inputs", "i", []string{}, "Files/Directories to process.")
 
 	hashCmd := &cobra.Command{
 		Use:   "hash <input>...",
-		Short: "Compute hashes for files using common algorithms (MD5, SHA-1, SHA-256, SHA-512).",
+		Short: "Compute and print hashes for files.",
 		Run: func(cmd *cobra.Command, args []string) {
 			c := InitApp()
 			defer c.Close()
@@ -244,12 +201,11 @@ func FileCmd() *cobra.Command {
 			m.logError(m.Hash(flags.Inputs))
 		},
 	}
-	hashCmd.Flags().StringArrayP("inputs", "i", []string{}, "Files/Directories to hash.")
 	rootCmd.AddCommand(hashCmd)
 
 	renameCmd := &cobra.Command{
 		Use:   "rename <input>...",
-		Short: "Rename multiples file using pre-defined settings.",
+		Short: "Multi-rename files and directories.",
 		Run: func(cmd *cobra.Command, args []string) {
 			c := InitApp()
 			defer c.Close()
@@ -258,7 +214,6 @@ func FileCmd() *cobra.Command {
 			m.logError(m.Rename(flags.Inputs, flags.Preset))
 		},
 	}
-	renameCmd.Flags().StringArrayP("inputs", "i", []string{}, "Files to rename. Directories will be ignored.")
 	renameCmd.Flags().StringP("preset", "p", "", "Name of pre-defined settings for renaming.")
 	rootCmd.AddCommand(renameCmd)
 

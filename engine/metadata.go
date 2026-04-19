@@ -31,9 +31,8 @@ import (
 	"github.com/tforce-io/tf-golib/opx/slicext"
 	"github.com/tforce-io/tf-golib/strfmt"
 	"github.com/tforceaio/tf-unifiler-go/core"
-	"github.com/tforceaio/tf-unifiler-go/crypto/hasher"
 	"github.com/tforceaio/tf-unifiler-go/db"
-	"github.com/tforceaio/tf-unifiler-go/filesystem"
+	"github.com/tforceaio/tf-unifiler-go/filesys"
 )
 
 // MetadataModule handles user requests related file hashes.
@@ -53,13 +52,11 @@ func NewMetadataModule(c *Controller, cmdName string) *MetadataModule {
 // Invert will match non-existed files in database instead.
 // Erase will delete the file directly instead of moving them.
 func (m *MetadataModule) Refine(workspaceDir string, inputs, collections []string, onlyObsoleted, invert, erase bool) error {
-	if workspaceDir == "" {
-		return errors.New("workspace is not set")
-	} else if !filesystem.IsDirectoryExist(workspaceDir) {
-		return errors.New("workspace is not found")
+	if err := validateWorkspace(workspaceDir); err != nil {
+		return err
 	}
-	if len(inputs) == 0 {
-		return errors.New("inputs is empty")
+	if err := validateInputs(inputs); err != nil {
+		return err
 	}
 	m.logger.Info().
 		Strs("collections", collections).
@@ -70,35 +67,26 @@ func (m *MetadataModule) Refine(workspaceDir string, inputs, collections []strin
 		Str("workspace", workspaceDir).
 		Msg("Start refining file system.")
 
-	contents, err := filesystem.List(inputs, true)
+	algos := []string{"md5", "sha1", "sha256", "sha512"}
+	fhResults, err := listAndHashFiles(inputs, algos, true)
 	if err != nil {
 		return err
 	}
+
 	dbFile := MetadataWorkspaceDatabase(workspaceDir)
 	ctx, err := db.Connect(dbFile)
 	if err != nil {
 		return err
 	}
 
-	algos := []string{"md5", "sha1", "sha256", "sha512"}
-	for _, c := range contents {
-		if c.IsDir {
-			continue
-		}
-		fhResults, err := hasher.Hash(c.RelativePath, algos)
-		if err != nil {
-			m.logger.Info().
-				Str("path", c.RelativePath).
-				Msg("Failed to compute hash.")
-			return err
-		}
-		sha256 := hex.EncodeToString(fhResults[2].Hash)
+	for _, r := range fhResults {
+		sha256 := hex.EncodeToString(r.Hashes[2].Hash)
 		m.logger.Info().
-			Str("md5", hex.EncodeToString(fhResults[0].Hash)).
-			Str("path", c.RelativePath).
-			Str("sha1", hex.EncodeToString(fhResults[1].Hash)).
+			Str("md5", hex.EncodeToString(r.Hashes[0].Hash)).
+			Str("path", r.Entry.RelativePath).
+			Str("sha1", hex.EncodeToString(r.Hashes[1].Hash)).
 			Str("sha256", sha256).
-			Int("size", fhResults[0].Size).
+			Int("size", r.Hashes[0].Size).
 			Msg("Hashed file.")
 		metadatas, err := ctx.GetHashesInSets(collections, []string{sha256}, onlyObsoleted)
 		if err != nil {
@@ -106,28 +94,28 @@ func (m *MetadataModule) Refine(workspaceDir string, inputs, collections []strin
 		}
 		noMetadata := len(metadatas) == 0
 		if invert == noMetadata {
-			newFile := strfmt.NewPathFromStr(c.AbsolutePath)
+			newFile := strfmt.NewPathFromStr(r.Entry.AbsolutePath)
 			intDir := opx.Ternary(invert, ".extra", ".backup")
 			newFile.Parents = append(newFile.Parents, intDir)
 			if erase {
-				err = os.Remove(c.AbsolutePath)
+				err = os.Remove(r.Entry.AbsolutePath)
 			} else {
-				err = filesystem.CreateDirectoryRecursive(newFile.ParentPath())
+				err = filesys.CreateDirectoryRecursive(newFile.ParentPath())
 				if err != nil {
 					return err
 				}
-				err = os.Rename(c.AbsolutePath, newFile.FullPath())
+				err = os.Rename(r.Entry.AbsolutePath, newFile.FullPath())
 			}
 			if err != nil {
 				return err
 			}
 			if erase {
 				m.logger.Info().
-					Str("path", c.RelativePath).
+					Str("path", r.Entry.RelativePath).
 					Msg("Deleted file.")
 			} else {
 				m.logger.Info().
-					Str("src", c.RelativePath).
+					Str("src", r.Entry.RelativePath).
 					Str("dest", newFile.FullPath()).
 					Msg("Moved file.")
 			}
@@ -141,13 +129,11 @@ func (m *MetadataModule) Refine(workspaceDir string, inputs, collections []strin
 // and add them to collection.
 // Mark them as obseleted if delete is true.
 func (m *MetadataModule) Scan(workspaceDir string, inputs, collections []string, delete bool) error {
-	if workspaceDir == "" {
-		return errors.New("workspace is not set")
-	} else if !filesystem.IsDirectoryExist(workspaceDir) {
-		return errors.New("workspace is not found")
+	if err := validateWorkspace(workspaceDir); err != nil {
+		return err
 	}
-	if len(inputs) == 0 {
-		return errors.New("inputs is empty")
+	if err := validateInputs(inputs); err != nil {
+		return err
 	}
 	if len(collections) == 0 {
 		return errors.New("collections is empty")
@@ -159,36 +145,26 @@ func (m *MetadataModule) Scan(workspaceDir string, inputs, collections []string,
 		Str("workspace", workspaceDir).
 		Msg("Start scanning files metadata.")
 
-	contents, err := filesystem.List(inputs, true)
+	algos := []string{"md5", "sha1", "sha256", "sha512"}
+	fhResults, err := listAndHashFiles(inputs, algos, true)
 	if err != nil {
 		return err
 	}
 
 	hResults := []*core.FileMultiHash{}
-	algos := []string{"md5", "sha1", "sha256", "sha512"}
-	for _, c := range contents {
-		if c.IsDir {
-			continue
-		}
-		fhResults, err := hasher.Hash(c.RelativePath, algos)
-		if err != nil {
-			m.logger.Info().
-				Str("path", c.RelativePath).
-				Msg("Failed to compute hash.")
-			return err
-		}
+	for _, r := range fhResults {
 		m.logger.Info().
 			Strs("algos", algos).
-			Str("path", c.RelativePath).
-			Int("size", fhResults[0].Size).
+			Str("path", r.Entry.RelativePath).
+			Int("size", r.Hashes[0].Size).
 			Msg("Hashed file.")
 		fileMultiHash := &core.FileMultiHash{
-			Md5:      fhResults[0].Hash,
-			Sha1:     fhResults[1].Hash,
-			Sha256:   fhResults[2].Hash,
-			Sha512:   fhResults[3].Hash,
-			Size:     uint32(fhResults[0].Size),
-			FileName: c.Name,
+			Md5:      r.Hashes[0].Hash,
+			Sha1:     r.Hashes[1].Hash,
+			Sha256:   r.Hashes[2].Hash,
+			Sha512:   r.Hashes[3].Hash,
+			Size:     uint32(r.Hashes[0].Size),
+			FileName: r.Entry.Name,
 		}
 		hResults = append(hResults, fileMultiHash)
 	}
@@ -208,10 +184,8 @@ func (m *MetadataModule) Scan(workspaceDir string, inputs, collections []string,
 
 // Query Hash data.
 func (m *MetadataModule) QueryHash(workspaceDir string, collections, sha256s []string, obsoleted bool) error {
-	if workspaceDir == "" {
-		return errors.New("workspace is not set")
-	} else if !filesystem.IsDirectoryExist(workspaceDir) {
-		return errors.New("workspace is not found")
+	if err := validateWorkspace(workspaceDir); err != nil {
+		return err
 	}
 
 	dbFile := MetadataWorkspaceDatabase(workspaceDir)
@@ -235,10 +209,8 @@ func (m *MetadataModule) QueryHash(workspaceDir string, collections, sha256s []s
 
 // Query Session data.
 func (m *MetadataModule) QuerySession(workspaceDir string, sessionID string) error {
-	if workspaceDir == "" {
-		return errors.New("workspace is not set")
-	} else if !filesystem.IsDirectoryExist(workspaceDir) {
-		return errors.New("workspace is not found")
+	if err := validateWorkspace(workspaceDir); err != nil {
+		return err
 	}
 
 	dbFile := MetadataWorkspaceDatabase(workspaceDir)
@@ -290,10 +262,8 @@ func (m *MetadataModule) QuerySession(workspaceDir string, sessionID string) err
 
 // Query Set data.
 func (m *MetadataModule) QuerySet(workspaceDir, setName string) error {
-	if workspaceDir == "" {
-		return errors.New("workspace is not set")
-	} else if !filesystem.IsDirectoryExist(workspaceDir) {
-		return errors.New("workspace is not found")
+	if err := validateWorkspace(workspaceDir); err != nil {
+		return err
 	}
 
 	dbFile := MetadataWorkspaceDatabase(workspaceDir)
@@ -340,9 +310,7 @@ func (m *MetadataModule) QuerySet(workspaceDir, setName string) error {
 
 // Decorator to log error occurred when calling handlers.
 func (m *MetadataModule) logError(err error) {
-	if err != nil {
-		m.logger.Err(err).Msg("Unexpected error has occurred. Program will exit.")
-	}
+	logProgramError(m.logger, err)
 }
 
 // Save hashing results to metadata database along with their respective collections.
@@ -441,12 +409,13 @@ func MetadataWorkspaceDatabase(workspaceDir string) string {
 func MetadataCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "metadata",
-		Short: "File metadata management and mass file update using metadata.",
+		Short: "Centralized file metadata database.",
 	}
+	rootCmd.PersistentFlags().StringP("workspace", "w", "", "Directory contains Unifiler workspace.")
 
 	refineCmd := &cobra.Command{
 		Use:   "refine <input>...",
-		Short: "Refine file system contents by metadata.",
+		Short: "Refine inputs against metadata database.",
 		Run: func(cmd *cobra.Command, args []string) {
 			c := InitApp()
 			defer c.Close()
@@ -460,12 +429,11 @@ func MetadataCmd() *cobra.Command {
 	refineCmd.Flags().StringArrayP("inputs", "i", []string{}, "Files/Directories to refine.")
 	refineCmd.Flags().Bool("invert", false, "Take action on non-matched files instead of matched ones.")
 	refineCmd.Flags().BoolP("obsoleted", "o", false, "Only match obsoleted files.")
-	refineCmd.Flags().StringP("workspace", "w", "", "Directory contains Unifiler workspace.")
 	rootCmd.AddCommand(refineCmd)
 
 	scanCmd := &cobra.Command{
 		Use:   "scan <input>...",
-		Short: "Compute hashes for files using common algorithms (MD5, SHA-1, SHA-256, SHA-512) and persist them.",
+		Short: "Scan inputs for file metadata.",
 		Run: func(cmd *cobra.Command, args []string) {
 			c := InitApp()
 			defer c.Close()
@@ -477,7 +445,6 @@ func MetadataCmd() *cobra.Command {
 	scanCmd.Flags().StringSliceP("collections", "c", []string{}, "Names of collections of known files, comma-separated list supported. If a collection existed, files will be appended to that collection.")
 	scanCmd.Flags().Bool("delete", false, "Mark the inputs as obsoleted.")
 	scanCmd.Flags().StringArrayP("inputs", "i", []string{}, "Files/Directories to hash.")
-	scanCmd.Flags().StringP("workspace", "w", "", "Directory contains Unifiler workspace.")
 	rootCmd.AddCommand(scanCmd)
 
 	rootCmd.AddCommand(metadataQueryCmd())
@@ -505,7 +472,6 @@ func metadataQueryCmd() *cobra.Command {
 	hashCmd.Flags().StringSliceP("collections", "c", []string{}, "Names of collections of known files, comma-separated list supported.")
 	hashCmd.Flags().StringSliceP("hashes", "v", []string{}, "SHA-256s of known files, comma-separated list supported.")
 	hashCmd.Flags().BoolP("obsoleted", "o", false, "Only match obsoleted files.")
-	hashCmd.Flags().StringP("workspace", "w", "", "Directory contains Unifiler workspace.")
 	queryCmd.AddCommand(hashCmd)
 
 	sessionCmd := &cobra.Command{
@@ -520,7 +486,6 @@ func metadataQueryCmd() *cobra.Command {
 		},
 	}
 	sessionCmd.Flags().StringP("id", "i", "", "Session ID.")
-	sessionCmd.Flags().StringP("workspace", "w", "", "Directory contains Unifiler workspace.")
 	queryCmd.AddCommand(sessionCmd)
 
 	setCmd := &cobra.Command{
@@ -535,7 +500,6 @@ func metadataQueryCmd() *cobra.Command {
 		},
 	}
 	setCmd.Flags().StringP("name", "n", "", "Collection name.")
-	setCmd.Flags().StringP("workspace", "w", "", "Directory contains Unifiler workspace.")
 	queryCmd.AddCommand(setCmd)
 
 	return queryCmd

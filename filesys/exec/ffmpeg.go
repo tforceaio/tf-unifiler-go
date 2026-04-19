@@ -19,7 +19,7 @@ package exec
 import (
 	"strconv"
 
-	"github.com/tforceaio/tf-unifiler-go/x/nullable"
+	"github.com/tforceaio/tf-unifiler-go/internal/nullable"
 )
 
 type FFmpegArgs struct {

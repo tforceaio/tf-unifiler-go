@@ -26,8 +26,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 	"github.com/tforce-io/tf-golib/opx"
-	"github.com/tforceaio/tf-unifiler-go/crypto/hasher"
-	"github.com/tforceaio/tf-unifiler-go/filesystem"
+	"github.com/tforceaio/tf-unifiler-go/filesys"
 )
 
 // ChecksumModule handles user requests related checksum file creation and verification.
@@ -54,41 +53,31 @@ func (m *ChecksumModule) Create(inputs []string, output string, algorithms []str
 		Str("output", output).
 		Msg("Start computing hashes.")
 
-	contents, err := filesystem.List(inputs, true)
+	fhResults, err := listAndHashFiles(inputs, algorithms, true)
 	if err != nil {
 		return err
 	}
 
-	hResults := []*hasher.HashResult{}
-	for _, c := range contents {
-		if c.IsDir {
-			continue
-		}
-		fhResults, err := hasher.Hash(c.RelativePath, algorithms)
+	for _, r := range fhResults {
 		m.logger.Info().
 			Strs("algos", algorithms).
-			Str("file", c.RelativePath).
-			Int("size", fhResults[0].Size).
+			Str("file", r.Entry.RelativePath).
+			Int("size", r.Hashes[0].Size).
 			Msg("Hashed file.")
-		if err != nil {
-			return err
-		}
-		hResults = append(hResults, fhResults...)
 	}
 
-	for _, a := range algorithms {
+	for i, a := range algorithms {
 		fContents := []string{}
-		for _, r := range hResults {
-			if a == r.Algorithm {
-				line := fmt.Sprintf("%s *%s", hex.EncodeToString(r.Hash), r.Path)
-				fContents = append(fContents, line)
-			}
+		for _, r := range fhResults {
+			h := r.Hashes[i]
+			line := fmt.Sprintf("%s *%s", hex.EncodeToString(h.Hash), r.Entry.RelativePath)
+			fContents = append(fContents, line)
 		}
 
 		outputInternal := opx.Ternary(output == "", "checksum", output)
 		// substitute file extension. for more information: https://go.dev/play/p/0wZcne8ZC8G
 		oPath := fmt.Sprintf("%s.%s", strings.TrimSuffix(outputInternal, filepath.Ext(outputInternal)), a)
-		err := filesystem.WriteLines(oPath, fContents)
+		err := filesys.WriteLines(oPath, fContents)
 		if err != nil {
 			return err
 		}
@@ -102,21 +91,19 @@ func (m *ChecksumModule) Create(inputs []string, output string, algorithms []str
 
 // Decorator to log error occurred when calling handlers.
 func (m *ChecksumModule) logError(err error) {
-	if err != nil {
-		m.logger.Err(err).Msg("Unexpected error has occurred. Program will exit.")
-	}
+	logProgramError(m.logger, err)
 }
 
 // Define Cobra Command for Checksum module.
 func ChecksumCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "checksum",
-		Short: "Create and verify checksum files.",
+		Short: "Checksum file processing.",
 	}
 
 	createCmd := &cobra.Command{
 		Use:   "create <input>...",
-		Short: "Create checksum file(s) using 1 or many hash algorithms.",
+		Short: "Create checksum file.",
 		Run: func(cmd *cobra.Command, args []string) {
 			c := InitApp()
 			defer c.Close()

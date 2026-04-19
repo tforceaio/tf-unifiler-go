@@ -1,4 +1,4 @@
-// Copyright (C) 2024 T-Force I/O
+// Copyright (C) 2025 T-Force I/O
 // This file is part of TF Unifiler
 //
 // TF Unifiler is free software: you can redistribute it and/or modify
@@ -14,11 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with TF Unifiler. If not, see <https://www.gnu.org/licenses/>.
 
-package extension
+package engine
 
-func ErrString(err error) string {
+import "github.com/rs/zerolog"
+
+// Log error message
+func logProgramError(logger zerolog.Logger, err error) {
 	if err != nil {
-		return err.Error()
+		logger.Err(err).Msg("Unexpected error has occurred. Program will exit.")
 	}
-	return ""
 }

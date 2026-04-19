@@ -14,24 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with TF Unifiler. If not, see <https://www.gnu.org/licenses/>.
 
-package checksum
+package xlib
 
-type ChecksumItem struct {
-	Hash       string
-	BinaryMode bool
-	Path       string
+func ErrString(err error) string {
+	if err != nil {
+		return err.Error()
+	}
+	return ""
 }
-
-type token int
-
-const (
-	INVALID token = iota
-	SPACE
-	CR
-	LF
-	EOF
-
-	ASTERISK
-
-	WORD
-)
