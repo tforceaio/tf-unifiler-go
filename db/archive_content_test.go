@@ -90,11 +90,18 @@ type testingArchiveContent struct {
 	Directory string
 	Name      string
 	Extension string
-	HashID    uuid.UUID
+	HashID    Bytes32
 }
 
 func (a *testingArchiveContent) ArchiveContent() *ArchiveContent {
 	return NewArchiveContent(a.ArchiveID, a.Directory, a.Name, a.Extension, a.HashID)
+}
+
+// uuidHashID copies a UUID's 16 bytes into the first half of a Bytes32.
+func uuidHashID(id uuid.UUID) Bytes32 {
+	var b Bytes32
+	copy(b[:], id[:])
+	return b
 }
 
 func testingArchiveContentData() (docs, photos []*testingArchiveContent) {
@@ -102,32 +109,32 @@ func testingArchiveContentData() (docs, photos []*testingArchiveContent) {
 	photosArchiveID := uuid.MustParse("0195b2a1-0001-7000-8000-000000000003")
 
 	docs = []*testingArchiveContent{
-		{docsArchiveID, "documents/project", "report", ".pdf", uuid.MustParse("0195b2a1-0002-7000-8000-000000000001")},
-		{docsArchiveID, "documents/project", "budget", ".xlsx", uuid.MustParse("0195b2a1-0002-7000-8000-000000000002")},
-		{docsArchiveID, "documents/project", "plan", ".docx", uuid.MustParse("0195b2a1-0002-7000-8000-000000000003")},
-		{docsArchiveID, "documents/personal", "cv", ".pdf", uuid.MustParse("0195b2a1-0002-7000-8000-000000000004")},
-		{docsArchiveID, "documents/personal", "notes", ".txt", uuid.MustParse("0195b2a1-0002-7000-8000-000000000005")},
-		{docsArchiveID, "documents/work", "contract", ".pdf", uuid.MustParse("0195b2a1-0002-7000-8000-000000000006")},
-		{docsArchiveID, "documents/work", "invoice", ".docx", uuid.MustParse("0195b2a1-0002-7000-8000-000000000007")},
+		{docsArchiveID, "documents/project", "report", ".pdf", uuidHashID(uuid.MustParse("0195b2a1-0002-7000-8000-000000000001"))},
+		{docsArchiveID, "documents/project", "budget", ".xlsx", uuidHashID(uuid.MustParse("0195b2a1-0002-7000-8000-000000000002"))},
+		{docsArchiveID, "documents/project", "plan", ".docx", uuidHashID(uuid.MustParse("0195b2a1-0002-7000-8000-000000000003"))},
+		{docsArchiveID, "documents/personal", "cv", ".pdf", uuidHashID(uuid.MustParse("0195b2a1-0002-7000-8000-000000000004"))},
+		{docsArchiveID, "documents/personal", "notes", ".txt", uuidHashID(uuid.MustParse("0195b2a1-0002-7000-8000-000000000005"))},
+		{docsArchiveID, "documents/work", "contract", ".pdf", uuidHashID(uuid.MustParse("0195b2a1-0002-7000-8000-000000000006"))},
+		{docsArchiveID, "documents/work", "invoice", ".docx", uuidHashID(uuid.MustParse("0195b2a1-0002-7000-8000-000000000007"))},
 	}
 
 	photos = []*testingArchiveContent{
-		{photosArchiveID, "photos/2023/beach", "img001", ".jpg", uuid.MustParse("0195b2a1-0003-7000-8000-000000000001")},
-		{photosArchiveID, "photos/2023/beach", "img002", ".jpg", uuid.MustParse("0195b2a1-0003-7000-8000-000000000002")},
-		{photosArchiveID, "photos/2023/beach", "img003", ".jpg", uuid.MustParse("0195b2a1-0003-7000-8000-000000000003")},
-		{photosArchiveID, "photos/2023/mountain", "img001", ".jpg", uuid.MustParse("0195b2a1-0003-7000-8000-000000000004")},
-		{photosArchiveID, "photos/2023/mountain", "img002", ".jpg", uuid.MustParse("0195b2a1-0003-7000-8000-000000000005")},
-		{photosArchiveID, "photos/2023/mountain", "img003", ".jpg", uuid.MustParse("0195b2a1-0003-7000-8000-000000000006")},
-		{photosArchiveID, "photos/2023/mountain", "img004", ".jpg", uuid.MustParse("0195b2a1-0003-7000-8000-000000000007")},
-		{photosArchiveID, "photos/2024/summer", "img001", ".jpg", uuid.MustParse("0195b2a1-0003-7000-8000-000000000008")},
-		{photosArchiveID, "photos/2024/summer", "img002", ".jpg", uuid.MustParse("0195b2a1-0003-7000-8000-000000000009")},
-		{photosArchiveID, "photos/2024/summer", "img003", ".jpg", uuid.MustParse("0195b2a1-0003-7000-8000-00000000000a")},
-		{photosArchiveID, "photos/2024/summer", "img004", ".jpg", uuid.MustParse("0195b2a1-0003-7000-8000-00000000000b")},
-		{photosArchiveID, "photos/2024/winter", "img001", ".jpg", uuid.MustParse("0195b2a1-0003-7000-8000-00000000000c")},
-		{photosArchiveID, "photos/2024/winter", "img002", ".jpg", uuid.MustParse("0195b2a1-0003-7000-8000-00000000000d")},
-		{photosArchiveID, "photos/2024/winter", "img003", ".jpg", uuid.MustParse("0195b2a1-0003-7000-8000-00000000000e")},
-		{photosArchiveID, "photos/2024/winter", "img004", ".jpg", uuid.MustParse("0195b2a1-0003-7000-8000-00000000000f")},
-		{photosArchiveID, "photos/2024/winter", "img005", ".jpg", uuid.MustParse("0195b2a1-0003-7000-8000-000000000010")},
+		{photosArchiveID, "photos/2023/beach", "img001", ".jpg", uuidHashID(uuid.MustParse("0195b2a1-0003-7000-8000-000000000001"))},
+		{photosArchiveID, "photos/2023/beach", "img002", ".jpg", uuidHashID(uuid.MustParse("0195b2a1-0003-7000-8000-000000000002"))},
+		{photosArchiveID, "photos/2023/beach", "img003", ".jpg", uuidHashID(uuid.MustParse("0195b2a1-0003-7000-8000-000000000003"))},
+		{photosArchiveID, "photos/2023/mountain", "img001", ".jpg", uuidHashID(uuid.MustParse("0195b2a1-0003-7000-8000-000000000004"))},
+		{photosArchiveID, "photos/2023/mountain", "img002", ".jpg", uuidHashID(uuid.MustParse("0195b2a1-0003-7000-8000-000000000005"))},
+		{photosArchiveID, "photos/2023/mountain", "img003", ".jpg", uuidHashID(uuid.MustParse("0195b2a1-0003-7000-8000-000000000006"))},
+		{photosArchiveID, "photos/2023/mountain", "img004", ".jpg", uuidHashID(uuid.MustParse("0195b2a1-0003-7000-8000-000000000007"))},
+		{photosArchiveID, "photos/2024/summer", "img001", ".jpg", uuidHashID(uuid.MustParse("0195b2a1-0003-7000-8000-000000000008"))},
+		{photosArchiveID, "photos/2024/summer", "img002", ".jpg", uuidHashID(uuid.MustParse("0195b2a1-0003-7000-8000-000000000009"))},
+		{photosArchiveID, "photos/2024/summer", "img003", ".jpg", uuidHashID(uuid.MustParse("0195b2a1-0003-7000-8000-00000000000a"))},
+		{photosArchiveID, "photos/2024/summer", "img004", ".jpg", uuidHashID(uuid.MustParse("0195b2a1-0003-7000-8000-00000000000b"))},
+		{photosArchiveID, "photos/2024/winter", "img001", ".jpg", uuidHashID(uuid.MustParse("0195b2a1-0003-7000-8000-00000000000c"))},
+		{photosArchiveID, "photos/2024/winter", "img002", ".jpg", uuidHashID(uuid.MustParse("0195b2a1-0003-7000-8000-00000000000d"))},
+		{photosArchiveID, "photos/2024/winter", "img003", ".jpg", uuidHashID(uuid.MustParse("0195b2a1-0003-7000-8000-00000000000e"))},
+		{photosArchiveID, "photos/2024/winter", "img004", ".jpg", uuidHashID(uuid.MustParse("0195b2a1-0003-7000-8000-00000000000f"))},
+		{photosArchiveID, "photos/2024/winter", "img005", ".jpg", uuidHashID(uuid.MustParse("0195b2a1-0003-7000-8000-000000000010"))},
 	}
 	return
 }

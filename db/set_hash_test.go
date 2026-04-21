@@ -55,7 +55,7 @@ func TestSaveSetHashes(t *testing.T) {
 
 type testingSetHash struct {
 	SetID  uuid.UUID
-	HashID uuid.UUID
+	HashID Bytes32
 }
 
 func (s *testingSetHash) SetHash() *SetHash {
@@ -67,33 +67,33 @@ func (s *testingSetHash) SetHash() *SetHash {
 
 func testingSetHashData() (exes, imgs []*testingSetHash) {
 	exes = []*testingSetHash{
-		{uuid.MustParse("0194d4fd-2ca9-7356-9c26-f289b32cdd9a"), uuid.MustParse("0194d1c3-d795-746b-a504-83573e4137b2")},
-		{uuid.MustParse("0194d4fd-2ca9-7356-9c26-f289b32cdd9a"), uuid.MustParse("0194d1c4-08d1-79e6-94a1-a9891b835cfc")},
-		{uuid.MustParse("0194d4fd-2ca9-7356-9c26-f289b32cdd9a"), uuid.MustParse("0194d1c3-9aeb-76c9-9651-0d2d18b0591a")},
-		{uuid.MustParse("0194d4fd-2ca9-7356-9c26-f289b32cdd9a"), uuid.MustParse("0194d1c3-420e-711e-9e5b-4dded2d9ce7d")},
-		{uuid.MustParse("0194d4fd-2ca9-7356-9c26-f289b32cdd9a"), uuid.MustParse("0194d1c3-e1d1-7546-a032-72cde06b61ee")},
-		{uuid.MustParse("0194d4fd-2ca9-7356-9c26-f289b32cdd9a"), uuid.MustParse("0194d1c4-95b9-7c32-bc65-c193239c7d40")},
-		{uuid.MustParse("0194d4fd-2ca9-7356-9c26-f289b32cdd9a"), uuid.MustParse("0194d1c5-3cfd-78c4-b210-7378a714dbd1")},
+		{uuid.MustParse("0194d4fd-2ca9-7356-9c26-f289b32cdd9a"), uuidHashID(uuid.MustParse("0194d1c3-d795-746b-a504-83573e4137b2"))},
+		{uuid.MustParse("0194d4fd-2ca9-7356-9c26-f289b32cdd9a"), uuidHashID(uuid.MustParse("0194d1c4-08d1-79e6-94a1-a9891b835cfc"))},
+		{uuid.MustParse("0194d4fd-2ca9-7356-9c26-f289b32cdd9a"), uuidHashID(uuid.MustParse("0194d1c3-9aeb-76c9-9651-0d2d18b0591a"))},
+		{uuid.MustParse("0194d4fd-2ca9-7356-9c26-f289b32cdd9a"), uuidHashID(uuid.MustParse("0194d1c3-420e-711e-9e5b-4dded2d9ce7d"))},
+		{uuid.MustParse("0194d4fd-2ca9-7356-9c26-f289b32cdd9a"), uuidHashID(uuid.MustParse("0194d1c3-e1d1-7546-a032-72cde06b61ee"))},
+		{uuid.MustParse("0194d4fd-2ca9-7356-9c26-f289b32cdd9a"), uuidHashID(uuid.MustParse("0194d1c4-95b9-7c32-bc65-c193239c7d40"))},
+		{uuid.MustParse("0194d4fd-2ca9-7356-9c26-f289b32cdd9a"), uuidHashID(uuid.MustParse("0194d1c5-3cfd-78c4-b210-7378a714dbd1"))},
 	}
 
 	imgs = []*testingSetHash{
-		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuid.MustParse("0194d1d2-2508-797d-a012-3e8c02381f95")},
-		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuid.MustParse("0194d1d2-2509-7978-96ec-f7c649b3b17d")},
-		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuid.MustParse("0194d1d2-2509-7979-999a-8533a5c500d7")},
-		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuid.MustParse("0194d1d2-2509-797a-b36f-1892faafd2ee")},
-		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuid.MustParse("0194d1d2-2509-797b-8184-e56824828fca")},
-		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuid.MustParse("0194d1d2-2509-797c-b4e1-958b469a6a7f")},
-		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuid.MustParse("0194d1d2-2509-797d-8071-ff23cf9f18e7")},
-		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuid.MustParse("0194d1d2-2509-797e-9e8c-65491842335b")},
-		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuid.MustParse("0194d1d2-2509-797f-bef5-37bfca0aa255")},
-		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuid.MustParse("0194d1d2-2509-7980-8e4d-b3a8f9db938f")},
-		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuid.MustParse("0194d1d2-2509-7981-b4ff-57f9a5732ea3")},
-		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuid.MustParse("0194d1d2-2509-7982-96f4-691a1425cdda")},
-		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuid.MustParse("0194d1d2-2509-7983-8f8d-f30575da37e5")},
-		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuid.MustParse("0194d1d2-2509-7984-92c6-0eaec3ba18fa")},
-		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuid.MustParse("0194d1d2-2509-7985-aa0a-0620fa8fece8")},
-		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuid.MustParse("0194d1d2-2509-7986-b269-c5ac2883b479")},
-		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuid.MustParse("0194d1d2-2509-7987-8ab6-a27b9fb06dad")},
+		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuidHashID(uuid.MustParse("0194d1d2-2508-797d-a012-3e8c02381f95"))},
+		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuidHashID(uuid.MustParse("0194d1d2-2509-7978-96ec-f7c649b3b17d"))},
+		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuidHashID(uuid.MustParse("0194d1d2-2509-7979-999a-8533a5c500d7"))},
+		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuidHashID(uuid.MustParse("0194d1d2-2509-797a-b36f-1892faafd2ee"))},
+		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuidHashID(uuid.MustParse("0194d1d2-2509-797b-8184-e56824828fca"))},
+		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuidHashID(uuid.MustParse("0194d1d2-2509-797c-b4e1-958b469a6a7f"))},
+		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuidHashID(uuid.MustParse("0194d1d2-2509-797d-8071-ff23cf9f18e7"))},
+		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuidHashID(uuid.MustParse("0194d1d2-2509-797e-9e8c-65491842335b"))},
+		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuidHashID(uuid.MustParse("0194d1d2-2509-797f-bef5-37bfca0aa255"))},
+		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuidHashID(uuid.MustParse("0194d1d2-2509-7980-8e4d-b3a8f9db938f"))},
+		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuidHashID(uuid.MustParse("0194d1d2-2509-7981-b4ff-57f9a5732ea3"))},
+		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuidHashID(uuid.MustParse("0194d1d2-2509-7982-96f4-691a1425cdda"))},
+		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuidHashID(uuid.MustParse("0194d1d2-2509-7983-8f8d-f30575da37e5"))},
+		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuidHashID(uuid.MustParse("0194d1d2-2509-7984-92c6-0eaec3ba18fa"))},
+		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuidHashID(uuid.MustParse("0194d1d2-2509-7985-aa0a-0620fa8fece8"))},
+		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuidHashID(uuid.MustParse("0194d1d2-2509-7986-b269-c5ac2883b479"))},
+		{uuid.MustParse("0194d651-0882-771e-ae5e-b179750127d0"), uuidHashID(uuid.MustParse("0194d1d2-2509-7987-8ab6-a27b9fb06dad"))},
 	}
 	return
 }

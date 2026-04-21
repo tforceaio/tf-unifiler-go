@@ -30,12 +30,12 @@ type ArchiveContent struct {
 	Directory string    `gorm:"column:directory"`
 	Name      string    `gorm:"column:name"`
 	Extension string    `gorm:"column:extension"`
-	HashID    uuid.UUID `gorm:"column:hash_id"`
+	HashID    Bytes32   `gorm:"column:hash_id"`
 
 	SessionID uuid.UUID `gorm:"column:session_id"`
 }
 
-func NewArchiveContent(archiveID uuid.UUID, directory, name, extension string, hashID uuid.UUID) *ArchiveContent {
+func NewArchiveContent(archiveID uuid.UUID, directory, name, extension string, hashID Bytes32) *ArchiveContent {
 	return &ArchiveContent{
 		ArchiveID: archiveID,
 		PathHash:  archiveContentPathHash(directory, name, extension),
@@ -50,7 +50,7 @@ func (ctx *DbContext) GetArchiveContentsByArchiveIDs(archiveIDs uuid.UUIDs) ([]*
 	return ctx.findArchiveContentsByArchiveIDs(archiveIDs)
 }
 
-func (ctx *DbContext) GetArchiveContentsByHashIDs(hashIDs uuid.UUIDs) ([]*ArchiveContent, error) {
+func (ctx *DbContext) GetArchiveContentsByHashIDs(hashIDs []Bytes32) ([]*ArchiveContent, error) {
 	return ctx.findArchiveContentsByHashIDs(hashIDs)
 }
 
@@ -83,7 +83,7 @@ func (ctx *DbContext) findArchiveContentsByArchiveIDs(archiveIDs uuid.UUIDs) ([]
 	return docs, result.Error
 }
 
-func (ctx *DbContext) findArchiveContentsByHashIDs(hashIDs uuid.UUIDs) ([]*ArchiveContent, error) {
+func (ctx *DbContext) findArchiveContentsByHashIDs(hashIDs []Bytes32) ([]*ArchiveContent, error) {
 	var docs []*ArchiveContent
 	result := ctx.db.Model(&ArchiveContent{}).
 		Where("hash_id IN ?", hashIDs).

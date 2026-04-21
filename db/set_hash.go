@@ -23,19 +23,19 @@ import (
 
 type SetHash struct {
 	SetID  uuid.UUID `gorm:"column:set_id;primaryKey"`
-	HashID uuid.UUID `gorm:"column:hash_id;primaryKey"`
+	HashID Bytes32   `gorm:"column:hash_id;primaryKey"`
 
 	SessionID uuid.UUID `gorm:"session_id"`
 }
 
-func NewSetHash(setID, hashID uuid.UUID) *SetHash {
+func NewSetHash(setID uuid.UUID, hashID Bytes32) *SetHash {
 	return &SetHash{
 		SetID:  setID,
 		HashID: hashID,
 	}
 }
 
-func (ctx *DbContext) GetSetHashesByHashIDs(hashes uuid.UUIDs) ([]*SetHash, error) {
+func (ctx *DbContext) GetSetHashesByHashIDs(hashes []Bytes32) ([]*SetHash, error) {
 	return ctx.findSetHashesByHashIDs(hashes)
 }
 
@@ -64,7 +64,7 @@ func (ctx *DbContext) SaveSetHashes(setHashes []*SetHash) error {
 	return ctx.writeSetHashes(newSetHashes, []*SetHash{})
 }
 
-func (ctx *DbContext) findSetHashesByHashIDs(hashes uuid.UUIDs) ([]*SetHash, error) {
+func (ctx *DbContext) findSetHashesByHashIDs(hashes []Bytes32) ([]*SetHash, error) {
 	var docs []*SetHash
 	result := ctx.db.Model(&SetHash{}).
 		Where("hash_id IN ?", hashes).

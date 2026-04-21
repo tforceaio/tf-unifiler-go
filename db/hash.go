@@ -17,13 +17,15 @@
 package db
 
 import (
+	"encoding/hex"
+
 	"github.com/google/uuid"
 	"github.com/tforceaio/tf-unifiler-go/core"
 )
 
 // Hash represents a set of hashes for a particular file along with basic metadata.
 type Hash struct {
-	ID     uuid.UUID `gorm:"column:id;primaryKey"`
+	ID     Bytes32   `gorm:"column:id;primaryKey"`
 	Md5    string    `gorm:"column:md5"`
 	Sha1   string    `gorm:"column:sha1"`
 	Sha256 string    `gorm:"column:sha256;uniqueIndex"`
@@ -39,7 +41,10 @@ type Hash struct {
 
 // Return new hash.
 func NewHash(fileHashes *core.FileMultiHash, isIgnored bool) *Hash {
+	var id Bytes32
+	copy(id[:], fileHashes.Sha256)
 	return &Hash{
+		ID:          id,
 		Crc32:       fileHashes.Crc32.HexStr(),
 		Md5:         fileHashes.Md5.HexStr(),
 		Sha1:        fileHashes.Sha1.HexStr(),
@@ -52,7 +57,7 @@ func NewHash(fileHashes *core.FileMultiHash, isIgnored bool) *Hash {
 }
 
 // Get Hash by ID.
-func (c *DbContext) GetHash(id uuid.UUID) (*Hash, error) {
+func (c *DbContext) GetHash(id Bytes32) (*Hash, error) {
 	return c.findHash(id)
 }
 
@@ -102,7 +107,7 @@ func (c *DbContext) SaveHashes(hashes []*Hash) error {
 	if err != nil {
 		return err
 	}
-	changedHashesMap := map[string]uuid.UUID{}
+	changedHashesMap := map[string]Bytes32{}
 	for _, hash := range changedHashes {
 		changedHashesMap[hash.Sha256] = hash.ID
 	}
@@ -118,7 +123,7 @@ func (c *DbContext) SaveHashes(hashes []*Hash) error {
 }
 
 // Return Hash that has specified id.
-func (c *DbContext) findHash(id uuid.UUID) (*Hash, error) {
+func (c *DbContext) findHash(id Bytes32) (*Hash, error) {
 	var doc *Hash
 	result := c.db.Model(&Hash{}).
 		Where("id = ?", id).
@@ -178,12 +183,12 @@ func (c *DbContext) findHashesBySha256s(hashes []string) ([]*Hash, error) {
 func (c *DbContext) writeHashes(newHashes []*Hash, changedHashes []*Hash) error {
 	tx := c.db.Begin()
 	for _, hash := range newHashes {
-		if hash.ID == uuid.Nil {
-			var err error
-			hash.ID, err = uuid.NewRandom()
+		if hash.ID == (Bytes32{}) {
+			b, err := hex.DecodeString(hash.Sha256)
 			if err != nil {
 				return err
 			}
+			copy(hash.ID[:], b)
 		}
 		result := tx.Create(hash)
 		if result.Error != nil {

@@ -427,7 +427,7 @@ func (m *MetadataModule) saveIResults(ctx *db.DbContext, archiveName string, upd
 		m.logger.Info().Msg("Failed to reload Hashes.")
 		return err
 	}
-	hashesMap := map[string]uuid.UUID{}
+	hashesMap := map[string]db.Bytes32{}
 	for _, hash := range hashes {
 		hashesMap[hash.Sha256] = hash.ID
 	}
@@ -506,7 +506,7 @@ func (m *MetadataModule) saveHResults(ctx *db.DbContext, hResults []*core.FileMu
 		m.logger.Info().Msg("Failed to reload Hashes.")
 		return err
 	}
-	hashesMap := map[string]uuid.UUID{}
+	hashesMap := map[string]db.Bytes32{}
 	for _, hash := range hashes {
 		hashesMap[hash.Sha256] = hash.ID
 	}
