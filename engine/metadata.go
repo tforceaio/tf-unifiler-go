@@ -560,7 +560,7 @@ func (m *MetadataModule) saveHResults(ctx *db.DbContext, hResults []*core.FileMu
 
 // Return database path to store Metadata module's ouputs inside Unifiler workspace.
 func MetadataWorkspaceDatabase(workspaceDir string) string {
-	return filepath.Join(workspaceDir, ".unifiler", "metadata.db")
+	return filepath.Join(workspaceDir, "metadata.db")
 }
 
 // Define Cobra Command for Metadata module.
