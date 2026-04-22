@@ -1,18 +1,18 @@
 // Copyright (C) 2024 T-Force I/O
-// This file is part of TF Unifiler Build library.
+// This file is part of TFunifiler Build library.
 //
-// TF Unifiler Build library is free software: you can redistribute it and/or modify
+// TFunifiler Build library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// TF Unifiler Build library is distributed in the hope that it will be useful,
+// TFunifiler Build library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with TF Unifiler Build library. If not, see <http://www.gnu.org/licenses/>.
+// along with TFunifiler Build library. If not, see <http://www.gnu.org/licenses/>.
 //
 // This file is a modified version of The go-ethereum library, Copyright 2016 The go-ethereum Authors
 

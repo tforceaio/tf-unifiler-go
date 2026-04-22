@@ -1,18 +1,18 @@
 // Copyright (C) 2025 T-Force I/O
-// This file is part of TF Unifiler
+// This file is part of TFunifiler
 //
-// TF Unifiler is free software: you can redistribute it and/or modify
+// TFunifiler is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// TF Unifiler is distributed in the hope that it will be useful,
+// TFunifiler is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with TF Unifiler. If not, see <https://www.gnu.org/licenses/>.
+// along with TFunifiler. If not, see <https://www.gnu.org/licenses/>.
 
 package db
 
@@ -20,17 +20,17 @@ import (
 	"encoding/hex"
 
 	"github.com/google/uuid"
-	"github.com/tforceaio/tf-unifiler-go/core"
+	"github.com/tforceaio/tf-unifiler/core"
 )
 
 // Hash represents a set of hashes for a particular file along with basic metadata.
 type Hash struct {
-	ID     Bytes32   `gorm:"column:id;primaryKey"`
-	Md5    string    `gorm:"column:md5"`
-	Sha1   string    `gorm:"column:sha1"`
-	Sha256 string    `gorm:"column:sha256;uniqueIndex"`
-	Sha512 string    `gorm:"column:sha512"`
-	Crc32  string    `gorm:"column:crc32"`
+	ID     Bytes32 `gorm:"column:id;primaryKey"`
+	Md5    string  `gorm:"column:md5"`
+	Sha1   string  `gorm:"column:sha1"`
+	Sha256 string  `gorm:"column:sha256;uniqueIndex"`
+	Sha512 string  `gorm:"column:sha512"`
+	Crc32  string  `gorm:"column:crc32"`
 
 	Size        uint32 `gorm:"column:size"`
 	Description string `gorm:"column:description"`

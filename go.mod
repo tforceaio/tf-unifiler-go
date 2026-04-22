@@ -1,4 +1,4 @@
-module github.com/tforceaio/tf-unifiler-go
+module github.com/tforceaio/tf-unifiler
 
 go 1.20
 
