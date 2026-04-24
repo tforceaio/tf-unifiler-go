@@ -1,4 +1,4 @@
-// Copyright (C) 2024 T-Force I/O
+// Copyright (C) 2025 T-Force I/O
 // This file is part of TFunifiler
 //
 // TFunifiler is free software: you can redistribute it and/or modify
@@ -18,6 +18,7 @@ package hasher
 
 import "crypto/sha1"
 
+// Compute SHA-1 checksum of a file.
 func HashSha1(fPath string) (*HashResult, error) {
 	return hashFile(fPath, sha1.New(), "sha1")
 }

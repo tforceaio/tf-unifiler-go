@@ -1,4 +1,4 @@
-// Copyright (C) 2024 T-Force I/O
+// Copyright (C) 2025 T-Force I/O
 // This file is part of TFunifiler
 //
 // TFunifiler is free software: you can redistribute it and/or modify
@@ -22,10 +22,12 @@ import (
 	"golang.org/x/crypto/md4"
 )
 
+// Compute the MD4 checksum of a file.
 func HashMd4(fPath string) (*HashResult, error) {
 	return hashFile(fPath, md4.New(), "md4")
 }
 
+// Compute the MD5 checksum of a file.
 func HashMd5(fPath string) (*HashResult, error) {
 	return hashFile(fPath, md5.New(), "md5")
 }

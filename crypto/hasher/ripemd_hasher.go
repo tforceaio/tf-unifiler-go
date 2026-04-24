@@ -1,4 +1,4 @@
-// Copyright (C) 2024 T-Force I/O
+// Copyright (C) 2025 T-Force I/O
 // This file is part of TFunifiler
 //
 // TFunifiler is free software: you can redistribute it and/or modify
@@ -18,6 +18,7 @@ package hasher
 
 import "golang.org/x/crypto/ripemd160"
 
+// Compute RIPEMD-160 checksum of a file.
 func HashRipemd160(fPath string) (*HashResult, error) {
 	return hashFile(fPath, ripemd160.New(), "ripemd160")
 }

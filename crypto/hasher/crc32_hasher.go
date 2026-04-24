@@ -1,4 +1,4 @@
-// Copyright (C) 2024 T-Force I/O
+// Copyright (C) 2025 T-Force I/O
 // This file is part of TFunifiler
 //
 // TFunifiler is free software: you can redistribute it and/or modify
@@ -18,12 +18,12 @@ package hasher
 
 import "hash/crc32"
 
-// HashCrc32 computes the CRC-32 checksum of the file at fPath using the IEEE polynomial.
+// Compute the CRC-32 checksum of a file using the IEEE polynomial.
 func HashCrc32(fPath string) (*HashResult, error) {
 	return hashFile(fPath, crc32.NewIEEE(), "crc32")
 }
 
-// HashCrc32c computes the CRC-32C checksum of the file at fPath using the Castagnoli polynomial.
+// Compute the CRC-32C checksum of a file using the Castagnoli polynomial.
 func HashCrc32c(fPath string) (*HashResult, error) {
 	return hashFile(fPath, crc32.New(crc32.MakeTable(crc32.Castagnoli)), "crc32c")
 }

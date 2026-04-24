@@ -1,4 +1,4 @@
-// Copyright (C) 2024 T-Force I/O
+// Copyright (C) 2025 T-Force I/O
 // This file is part of TFunifiler
 //
 // TFunifiler is free software: you can redistribute it and/or modify
@@ -28,10 +28,12 @@ import (
 	"io"
 	"os"
 
+	"github.com/tforceaio/tf-unifiler/diag"
 	"golang.org/x/crypto/md4"
 	"golang.org/x/crypto/ripemd160"
 )
 
+// HashResult stores the checksum of a file for specific algorithm.
 type HashResult struct {
 	Path      string
 	Size      int
@@ -39,9 +41,15 @@ type HashResult struct {
 	Hash      []byte
 }
 
+// Compute multiple checksums of a file.
 func Hash(fPath string, algorithms []string) ([]*HashResult, error) {
 	fHandle, err := os.Open(fPath)
 	if err != nil {
+		return []*HashResult{}, err
+	}
+	stat, err := fHandle.Stat()
+	if err != nil {
+		fHandle.Close()
 		return []*HashResult{}, err
 	}
 	defer fHandle.Close()
@@ -79,6 +87,11 @@ func Hash(fPath string, algorithms []string) ([]*HashResult, error) {
 		}
 	}
 
+	p := diag.NewProgressTracker("HashFile", notifier)
+	defer p.Done()
+	p.Total(stat.Size())
+	p.Status(fPath)
+
 	bufSize := getBufferSize(fHandle)
 	buf := make([]byte, bufSize)
 	written := int64(0)
@@ -97,6 +110,7 @@ func Hash(fPath string, algorithms []string) ([]*HashResult, error) {
 				}
 			}
 			written += int64(nwrite)
+			p.Progress(written)
 			if ewrite != nil {
 				err = ewrite
 				break
@@ -136,12 +150,22 @@ func getBufferSize(src io.Reader) int {
 	return size
 }
 
+// Compute checksum of a file.
 func hashFile(fPath string, hasher hash.Hash, algo string) (*HashResult, error) {
 	fHandle, err := os.Open(fPath)
 	if err != nil {
 		return nil, err
 	}
+	stat, err := fHandle.Stat()
+	if err != nil {
+		return nil, err
+	}
 	defer fHandle.Close()
+
+	p := diag.NewProgressTracker("HashFile", notifier)
+	defer p.Done()
+	p.Total(stat.Size())
+	p.Status(fPath)
 
 	bufSize := getBufferSize(fHandle)
 	buf := make([]byte, bufSize)
@@ -157,6 +181,7 @@ func hashFile(fPath string, hasher hash.Hash, algo string) (*HashResult, error) 
 				}
 			}
 			written += int64(nwrite)
+			p.Progress(written)
 			if ewrite != nil {
 				err = ewrite
 				break

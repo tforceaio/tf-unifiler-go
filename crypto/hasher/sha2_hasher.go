@@ -1,4 +1,4 @@
-// Copyright (C) 2024 T-Force I/O
+// Copyright (C) 2025 T-Force I/O
 // This file is part of TFunifiler
 //
 // TFunifiler is free software: you can redistribute it and/or modify
@@ -21,18 +21,22 @@ import (
 	"crypto/sha512"
 )
 
+// Compute SHA-224 checksum of a file.
 func HashSha224(fPath string) (*HashResult, error) {
 	return hashFile(fPath, sha256.New224(), "sha224")
 }
 
+// Compute SHA-256 checksum of a file.
 func HashSha256(fPath string) (*HashResult, error) {
 	return hashFile(fPath, sha256.New(), "sha256")
 }
 
+// Compute SHA-384 checksum of a file.
 func HashSha384(fPath string) (*HashResult, error) {
 	return hashFile(fPath, sha512.New384(), "sha384")
 }
 
+// Compute SHA-512 checksum of a file.
 func HashSha512(fPath string) (*HashResult, error) {
 	return hashFile(fPath, sha512.New(), "sha512")
 }
